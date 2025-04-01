@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+codeaug/invert_ifs.py
+codeaug/replace_for_with_while.py
+codeaug/transforms.py
+codeaug/utils.py
+codeaug.egg-info/PKG-INFO
+codeaug.egg-info/SOURCES.txt
+codeaug.egg-info/dependency_links.txt
+codeaug.egg-info/requires.txt
+codeaug.egg-info/top_level.txt
+codeaug/functional/__init__.py
+codeaug/functional/invert_ifs.py
+codeaug/functional/remove_comments.py
+codeaug/functional/replace_for_with_while.py
+tests/test_invert_ifs.py
+tests/test_remove_comments.py

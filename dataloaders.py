@@ -3,15 +3,15 @@ from torch.utils.data import DataLoader
 from datasets import load_dataset
 
 
-def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16):
+def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=lambda x: x):
     ds = load_dataset("PoolC/5-fold-clone-detection-600k-5fold")
     train_split = "train"
     val_split = "val"
 
     def tokenize_function(examples):
         return tokenizer(
-            examples["code1"],
-            examples["code2"],
+            t(examples["code1"]),
+            t(examples["code2"]),
             padding="max_length",
             truncation=True,
             max_length=512,

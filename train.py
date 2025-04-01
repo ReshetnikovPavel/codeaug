@@ -1,12 +1,11 @@
 import argparse
 
-from datasets import load_dataset
-import torch
-from transformers import RobertaTokenizer, RobertaConfig, RobertaModel
-
-
-import models
 import dataloaders
+import models
+import torch
+from transformers import RobertaTokenizer
+
+import codeaug.transforms
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -25,30 +24,51 @@ def parse_arguments() -> argparse.Namespace:
         type=str,
         help="A model name to train",
     )
+    parser.add_argument(
+        "transformations",
+        nargs="*",
+        type=str,
+        help="A list of code augmentations techniques applied in given order."
+        " Possible values are: remove-comments, invert-ifs",
+    )
 
     return parser.parse_args()
 
 
+def build_transformations(args):
+    transforms = []
+    for t in args.transformations:
+        if t == "remove-comments":
+            transforms.append(codeaug.transforms.RemoveComments)
+        elif t == "invert-ifs":
+            transforms.append(codeaug.transforms.InvertIfs)
+        else:
+            raise argparse.ArgumentError(f"unknown transformation option `{t}`")
+    return codeaug.transforms.Compose(transforms)
+
+
 def clone_detection(args):
+    transform = build_transformations(args)
     tokenizer = RobertaTokenizer.from_pretrained("microsoft/codebert-base")
-    # print("got tokenizer")
-    train_loader, val_loader = dataloaders.get_clone_detection_dataloaders(tokenizer)
-    # print("got loaders")
+    train_loader, val_loader = dataloaders.get_clone_detection_dataloaders(
+        tokenizer, t=transform
+    )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # print("got device")
     model = models.CodeBertBinaryClassifier().to(device)
-    # print("got model")
     loss_fn = torch.nn.BCEWithLogitsLoss()
-    # print("got loss")
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
-    # print("got optimizer")
 
     epochs = 1
     for epoch in range(epochs):
         print("training epoch", epoch)
         train_loss = model.train_epoch(optimizer, train_loader, loss_fn, device)
         metrics = model.evaluate(val_loader, loss_fn, device)
-        print(f"Epoch {epoch+1} | Train Loss: {train_loss:.4f} | Val Loss: {metrics['loss']:.4f} | Val Acc: {metrics['acc']:.2f}%")
+        print(
+            f"Epoch {epoch + 1} | Train Loss: {train_loss:.4f} | Val Loss: {
+                metrics['loss']:.4f
+            } | Val Acc: {metrics['acc']:.2f}%"
+        )
+    torch.save(model.state_dict(), "out")
 
 
 if __name__ == "__main__":
