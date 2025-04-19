@@ -1,72 +1,102 @@
 import ast
+import io
 import tokenize
 from collections import defaultdict
-import io
-
-# Надо заменять не просто строчки, а блоки кода (типа весь for целиком)
-# И нельзя перемещать строчки из одной функции в другую, с классами тоже какая-то дичь
-
-# 1) Пойти по токенам, если индент, то ок, продолжаем, ждем пока будет дедент. В минус уходить нельзя, надо прерывать
-# это и будет нужный скоуп
 
 
-def get_scopes(program: str) -> defaultdict[int, list[tuple[int, int]]]:
-    tokens = tokenize.tokenize(io.BytesIO(program.encode('utf-8')).readline)
+def _get_scope(program: str, line: int) -> list[tuple[int, int]]:
+    tokens = tokenize.tokenize(io.BytesIO(program.encode("utf-8")).readline)
     scopes = defaultdict(list)
-    start = 0
+    start = 1
     scope = 0
+    target_scope = None
     for token in tokens:
+        if token.start[0] <= line <= token.end[0]:
+            target_scope = scope
+
         if token.type == tokenize.INDENT:
-            scopes[scope].append((start - 1, token.start[0]))
+            scopes[scope].append((start, token.start[0] - 1))
             scope += 1
             start = token.start[0]
         elif token.type == tokenize.DEDENT:
-            scopes[scope].append((start, token.start[0]))
+            if target_scope is not None and scope == target_scope:
+                scopes[scope].append((start, token.start[0] - 1))
+                break
+            if scope in scopes:
+                del scopes[scope]
             scope -= 1
+
             start = token.start[0]
         elif token.type == tokenize.ENDMARKER:
             scopes[scope].append((start, token.start[0]))
-    return scopes
+
+    return scopes[target_scope]
 
 
-def get_scope_by_line(scopes: dict[int, list[tuple[int, int]]], line: int) -> int:
-    for scope, ranges in scopes.items():
-        for start, end in ranges:
-            if start <= line < end:
-                return scope
-    raise ValueError("Scopes does not contain the line")
+def _get_closest_stmt_from_line(root: ast.AST, line: int) -> ast.AST | None:
+    visitor = Stmts()
+    visitor.visit(root)
+    stmts = visitor.stmts
+    max_depth = 0
+
+    res = None
+    for node, depth in stmts:
+        if node.lineno <= line <= node.end_lineno and depth > max_depth:
+            max_depth = depth
+            res = node
+    return res
 
 
-def get_ranges_with_same_scope(program: str, line: int) -> list[tuple[int, int]]:
-    scopes = get_scopes(program)
-    scope = get_scope_by_line(scopes, line)
-    return scopes[scope]
+class Stmts(ast.NodeVisitor):
+    def __init__(self):
+        self.stmts = []
+
+    def visit(self, node, depth=0):
+        if isinstance(node, ast.stmt):
+            self.stmts.append((node, depth))
+        for child in ast.iter_child_nodes(node):
+            self.visit(child, depth=depth + 1)
 
 
-def can_switch_to(program: str, line: int) -> list[tuple[int, int]]:
-    module = ast.parse(program)
-    visitor = NamesByLines()
-    visitor.visit(module)
-    nodes_by_lines = visitor.nodes
+def get_insert_ranges(root: ast.AST, stmt: ast.stmt | None) -> list[tuple[int, int]]:
+    if stmt is None:
+        return [(root.lineno, root.end_lineno)]
+
+    visitor = ChildNames()
+    visitor.visit(stmt)
+    child_names = visitor.child_names
+
     visitor = NamesByIds()
-    visitor.visit(module)
+    visitor.visit(root)
     nodes_by_ids = visitor.nodes
 
     next_uses = [
         other.lineno
-        for node in nodes_by_lines[line]
-        for other in nodes_by_ids[node.id]
-        if other.lineno > node.lineno
+        for child in child_names
+        for other in nodes_by_ids[child.id]
+        if other.lineno > stmt.end_lineno
     ]
     next_uses.append(len(program.splitlines()))
-    can_switch_till = min(next_uses) - 1
+    can_insert_forward_till = min(next_uses) - 1
+
+    prev_uses = [
+        other.lineno
+        for child in child_names
+        for other in nodes_by_ids[child.id]
+        if other.lineno < stmt.lineno
+    ]
+    prev_uses.append(-1)
+    can_insert_backward_till = max(prev_uses) + 1
 
     res = []
-    for start, end in get_ranges_with_same_scope(program, line):
-        if end > can_switch_till:
-            res.append((start, end))
+    for start, end in _get_scope(program, stmt.lineno):
+        if end < can_insert_backward_till:
+            continue
+        if can_insert_forward_till < start:
             break
-        res.append((start, end))
+        s = can_insert_backward_till if start < can_insert_backward_till else start
+        e = can_insert_forward_till if can_insert_forward_till < end else end
+        res.append((s, e))
     print(res)
     return res
 
@@ -80,6 +110,22 @@ class NamesByLines(ast.NodeVisitor):
         self.generic_visit(node)
 
 
+class ChildNames(ast.NodeVisitor):
+    def __init__(self):
+        self.child_names = None
+
+    def visit(self, node):
+        if isinstance(node, ast.Name):
+            return [node]
+
+        names = []
+        for child in ast.iter_child_nodes(node):
+            names.extend(self.visit(child))
+
+        self.child_names = names
+        return names
+
+
 class NamesByIds(ast.NodeVisitor):
     def __init__(self):
         self.nodes = defaultdict(list)
@@ -89,28 +135,98 @@ class NamesByIds(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def switch_lines(program: str, i: int, j: int) -> str | None:
-    for start, end in can_switch_to(program, i):
-        if j < start or end <= j:
-            return None
+def _is_unmovable_stmt(stmt: ast.stmt | None) -> bool:
+    return type(stmt) in [
+        ast.Return,
+        ast.Raise,
+        ast.Assert,
+        ast.Import,
+        ast.ImportFrom,
+        ast.Global,
+        ast.Nonlocal,
+        ast.Break,
+        ast.Continue,
+    ]
 
-    lines = program.splitlines(keepends=True)
-    i -= 1
-    j -= 1
-    lines[i], lines[j] = lines[j], lines[i]
-    return "".join(lines)
+
+def _in_ranges(ranges, target):
+    for start, end in ranges:
+        if start <= target <= end:
+            return True
+    return False
 
 
-program = """       # 1
-a = "Hello"         # 2
-a = "Goodbye"       # 3
-b = "World"         # 4
-# print(a, b)       # 5
-if a:               # 6
-    print("AAAA")   # 7
-    print("a")      # 8
-else:               # 9
-    print("meee")   # 10
-print("f")          # 11
+def insert_stmt(program: str, from_line: int, to_line: int):
+    root = ast.parse(program)
+
+    from_stmt = _get_closest_stmt_from_line(root, from_line)
+    if _is_unmovable_stmt(from_stmt):
+        return None
+    from_lineno = from_stmt.lineno - 1 if from_stmt else from_line - 1
+    from_end_lineno = from_stmt.end_lineno if from_stmt else from_line
+
+    to_stmt = _get_closest_stmt_from_line(root, to_line)
+    to_lineno = to_stmt.lineno - 1 if to_stmt else to_line - 1
+
+    if _in_ranges(get_insert_ranges(root, from_stmt), to_lineno):
+        lines = program.splitlines(keepends=True)
+        return "".join(
+            [
+                *lines[:from_lineno],
+                *lines[from_end_lineno:to_lineno],
+                *lines[from_lineno:from_end_lineno],
+                *lines[to_lineno:],
+            ]
+        )
+    return None
+
+
+def switch_stmts(program: str, from_line: int, to_line: int):
+    root = ast.parse(program)
+
+    from_stmt = _get_closest_stmt_from_line(root, from_line)
+    if _is_unmovable_stmt(from_stmt):
+        return None
+    from_lineno = from_stmt.lineno - 1 if from_stmt else from_line - 1
+    from_end_lineno = from_stmt.end_lineno if from_stmt else from_line
+
+    to_stmt = _get_closest_stmt_from_line(root, to_line)
+    if _is_unmovable_stmt(to_stmt):
+        return None
+    to_lineno = to_stmt.lineno - 1 if to_stmt else to_line - 1
+    to_end_lineno = to_stmt.end_lineno if to_stmt else to_line
+
+    if _in_ranges(get_insert_ranges(root, from_stmt), to_line) and _in_ranges(
+        get_insert_ranges(root, to_stmt), from_line
+    ):
+        lines = program.splitlines(keepends=True)
+        return "".join(
+            [
+                *lines[:from_lineno],
+                *lines[to_lineno:to_end_lineno],
+                *lines[from_end_lineno:to_lineno],
+                *lines[from_lineno:from_end_lineno],
+                *lines[to_end_lineno:],
+            ]
+        )
+    return None
+
+
+program = """                           # 1
+a = "Hello"                             # 2
+b = "Goodbye"                           # 3
+a = "World"                             # 4
+# print(a, b)                           # 5
+if a:                                   # 6
+    print("AAAA")                       # 7
+    print("a")                          # 8
+else:                                   # 9
+    print("meee")                       # 10
+next_uses = [                           # 12
+    node
+    for node in nodes_by_lines[line]    # 14
+    for other in nodes_by_ids[node.id]  # 15
+    if other.lineno > node.lineno       # 16
+]                                       # 17
 """
-print(switch_lines(program, 4, 8))
+print(switch_stmts(program, 3, 4))
