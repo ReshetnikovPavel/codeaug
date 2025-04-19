@@ -1,9 +1,6 @@
-import tree_sitter_python as tspython
-from tree_sitter import Language, Node, Parser
+from tree_sitter import Node
 
-from codeaug.utils import generic_visit, get_indentaion_by_node
-
-PY_LANGUAGE = Language(tspython.language())
+from codeaug.utils import generic_visit, get_indentaion_by_node, python_program_visitor
 
 
 def __is_for_identifier_in_range(node: Node) -> bool:
@@ -34,37 +31,37 @@ def __get_range_arguments(node: Node) -> (bytes, bytes, bytes):
     raise Exception("Range has too many arguments")
 
 
-def replace_for_with_while(program: bytes) -> bytes:
-    def visit(node: Node):
-        new_program = []
-        if __is_for_identifier_in_range(node):
-            left = node.child_by_field_name("left")
-            right = node.child_by_field_name("right")
-            body = node.child_by_field_name("body")
+def __visit(node: Node, program: bytes) -> bytes:
+    new_program = []
+    if __is_for_identifier_in_range(node):
+        left = node.child_by_field_name("left")
+        right = node.child_by_field_name("right")
+        body = node.child_by_field_name("body")
 
-            start, stop, step = __get_range_arguments(node)
-            assign = b"".join([left.text, b" = ", start])
-            increment = b"".join([left.text, b" += ", step])
-            condition = b"".join([left.text, b" < ", stop])
+        start, stop, step = __get_range_arguments(node)
+        assign = b"".join([left.text, b" = ", start])
+        increment = b"".join([left.text, b" += ", step])
+        condition = b"".join([left.text, b" < ", stop])
 
-            inside_loop_indentation = get_indentaion_by_node(program, body)
+        inside_loop_indentation = get_indentaion_by_node(program, body)
 
-            new_program.extend(
-                [
-                    assign,
-                    b"\n",
-                    b"while ",
-                    condition,
-                    replace_for_with_while(program[right.end_byte : node.end_byte]),
-                    b"\n",
-                    inside_loop_indentation,
-                    increment,
-                ]
-            )
+        new_program.extend(
+            [
+                assign,
+                b"\n",
+                b"while ",
+                condition,
+                program[right.end_byte : body.start_byte],
+                __visit(body, program),
+                b"\n",
+                inside_loop_indentation,
+                increment,
+            ]
+        )
 
-            return b"".join(new_program)
-        return generic_visit(program, node, visit)
+        return b"".join(new_program)
+    return generic_visit(node, program, __visit)
 
-    parser = Parser(PY_LANGUAGE)
-    tree = parser.parse(program)
-    return visit(tree.root_node)
+
+def replace_for_with_while(program: str) -> str:
+    return python_program_visitor(program, __visit)

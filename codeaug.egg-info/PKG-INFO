@@ -4,6 +4,7 @@ Version: 0.1.0
 Summary: Add your description here
 Requires-Python: >=3.13
 Description-Content-Type: text/markdown
+Requires-Dist: beniget>=0.4.2.post1
 Requires-Dist: datasets>=3.2.0
 Requires-Dist: pytest>=8.3.4
 Requires-Dist: torch>=2.6.0
