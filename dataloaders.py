@@ -1,17 +1,21 @@
 import torch
 from torch.utils.data import DataLoader
 from datasets import load_dataset
+import itertools
 
 
-def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=lambda x: x):
+def get_clone_detection_dataloaders(
+    tokenizer, fold_num=0, batch_size=16, t=lambda x: x
+):
+    print("loading PoolC/5-fold-clone-detection-600k-5fold")
     ds = load_dataset("PoolC/5-fold-clone-detection-600k-5fold")
     train_split = "train"
     val_split = "val"
 
     def tokenize_function(examples):
         return tokenizer(
-            t(examples["code1"]),
-            t(examples["code2"]),
+            list(itertools.chain(examples["code1"], map(t, examples["code1"]))),
+            list(itertools.chain(examples["code2"], map(t, examples["code2"]))),
             padding="max_length",
             truncation=True,
             max_length=512,
@@ -22,8 +26,10 @@ def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=lamb
             tokenize_function, batched=True, remove_columns=["code1", "code2"]
         ).with_format("torch")
 
-    train_ds = process_dataset(ds[train_split].take(10))
-    val_ds = process_dataset(ds[val_split].take(10))
+    print("Processing train dataset")
+    train_ds = process_dataset(ds[train_split]).take(10)
+    print("Processing val dataset")
+    val_ds = process_dataset(ds[val_split]).take(10)
 
     def collate_fn(batch):
         return {

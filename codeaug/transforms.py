@@ -1,4 +1,4 @@
-import functional as F
+import codeaug.functional as F
 
 
 class Compose:
@@ -20,10 +20,18 @@ class Compose:
 
 
 class RemoveComments:
-    def __call__(self, program):
+    def __call__(self, program: str):
         return F.remove_comments(program)
 
 
 class InvertIfs:
-    def __call__(self, program):
+    def __call__(self, program: str):
         return F.invert_ifs(program)
+
+
+class MoveRandomStmt:
+    def __init__(self, tries: int = 3):
+        self.tries = tries
+
+    def __call__(self, program: str, ):
+        return F.move_random_stmt(program, self.tries)

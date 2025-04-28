@@ -2,6 +2,7 @@ import ast
 import io
 import tokenize
 from collections import defaultdict
+import random
 
 
 def _get_scope(program: str, line: int) -> list[tuple[int, int]]:
@@ -58,7 +59,9 @@ class Stmts(ast.NodeVisitor):
             self.visit(child, depth=depth + 1)
 
 
-def get_insert_ranges(root: ast.AST, stmt: ast.stmt | None) -> list[tuple[int, int]]:
+def get_insert_ranges(
+    program: str, root: ast.AST, stmt: ast.stmt | None
+) -> list[tuple[int, int]]:
     if stmt is None:
         return [(root.lineno, root.end_lineno)]
 
@@ -97,7 +100,6 @@ def get_insert_ranges(root: ast.AST, stmt: ast.stmt | None) -> list[tuple[int, i
         s = can_insert_backward_till if start < can_insert_backward_till else start
         e = can_insert_forward_till if can_insert_forward_till < end else end
         res.append((s, e))
-    print(res)
     return res
 
 
@@ -135,7 +137,7 @@ class NamesByIds(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def _is_unmovable_stmt(stmt: ast.stmt | None) -> bool:
+def _is_immovable_stmt(stmt: ast.stmt | None) -> bool:
     return type(stmt) in [
         ast.Return,
         ast.Raise,
@@ -156,11 +158,11 @@ def _in_ranges(ranges, target):
     return False
 
 
-def insert_stmt(program: str, from_line: int, to_line: int):
+def move_stmt(program: str, from_line: int, to_line: int):
     root = ast.parse(program)
 
     from_stmt = _get_closest_stmt_from_line(root, from_line)
-    if _is_unmovable_stmt(from_stmt):
+    if _is_immovable_stmt(from_stmt):
         return None
     from_lineno = from_stmt.lineno - 1 if from_stmt else from_line - 1
     from_end_lineno = from_stmt.end_lineno if from_stmt else from_line
@@ -168,7 +170,7 @@ def insert_stmt(program: str, from_line: int, to_line: int):
     to_stmt = _get_closest_stmt_from_line(root, to_line)
     to_lineno = to_stmt.lineno - 1 if to_stmt else to_line - 1
 
-    if _in_ranges(get_insert_ranges(root, from_stmt), to_lineno):
+    if _in_ranges(get_insert_ranges(program, root, from_stmt), to_lineno):
         lines = program.splitlines(keepends=True)
         return "".join(
             [
@@ -185,19 +187,19 @@ def switch_stmts(program: str, from_line: int, to_line: int):
     root = ast.parse(program)
 
     from_stmt = _get_closest_stmt_from_line(root, from_line)
-    if _is_unmovable_stmt(from_stmt):
+    if _is_immovable_stmt(from_stmt):
         return None
     from_lineno = from_stmt.lineno - 1 if from_stmt else from_line - 1
     from_end_lineno = from_stmt.end_lineno if from_stmt else from_line
 
     to_stmt = _get_closest_stmt_from_line(root, to_line)
-    if _is_unmovable_stmt(to_stmt):
+    if _is_immovable_stmt(to_stmt):
         return None
     to_lineno = to_stmt.lineno - 1 if to_stmt else to_line - 1
     to_end_lineno = to_stmt.end_lineno if to_stmt else to_line
 
-    if _in_ranges(get_insert_ranges(root, from_stmt), to_line) and _in_ranges(
-        get_insert_ranges(root, to_stmt), from_line
+    if _in_ranges(get_insert_ranges(program, root, from_stmt), to_line) and _in_ranges(
+        get_insert_ranges(program, root, to_stmt), from_line
     ):
         lines = program.splitlines(keepends=True)
         return "".join(
@@ -212,21 +214,75 @@ def switch_stmts(program: str, from_line: int, to_line: int):
     return None
 
 
-program = """                           # 1
-a = "Hello"                             # 2
-b = "Goodbye"                           # 3
-a = "World"                             # 4
-# print(a, b)                           # 5
-if a:                                   # 6
-    print("AAAA")                       # 7
-    print("a")                          # 8
-else:                                   # 9
-    print("meee")                       # 10
-next_uses = [                           # 12
-    node
-    for node in nodes_by_lines[line]    # 14
-    for other in nodes_by_ids[node.id]  # 15
-    if other.lineno > node.lineno       # 16
-]                                       # 17
-"""
-print(switch_stmts(program, 3, 4))
+def get_random_from_ranges(ranges: list[tuple[int, int]]) -> int | None:
+    if not ranges:
+        return None
+
+    total_length = sum(end - start + 1 for start, end in ranges)
+    if total_length <= 0:
+        return None
+
+    random_offset = random.randint(0, total_length - 1)
+
+    for start, end in ranges:
+        range_length = end - start + 1
+        if random_offset < range_length:
+            return start + random_offset
+        random_offset -= range_length
+    return None
+
+
+def move_stmt_randomly(program: str, from_line: int) -> str | None:
+    root = ast.parse(program)
+
+    from_stmt = _get_closest_stmt_from_line(root, from_line)
+    if _is_immovable_stmt(from_stmt):
+        return None
+    from_lineno = from_stmt.lineno - 1 if from_stmt else from_line - 1
+    from_end_lineno = from_stmt.end_lineno if from_stmt else from_line
+
+    ranges = get_insert_ranges(program, root, from_stmt)
+    to_line = get_random_from_ranges(ranges)
+    if to_line is None or to_line == from_line + 1 or to_line == from_line:
+        return None
+
+    to_stmt = _get_closest_stmt_from_line(root, to_line)
+    to_lineno = to_stmt.lineno - 1 if to_stmt else to_line - 1
+
+    if _in_ranges(get_insert_ranges(program, root, from_stmt), to_lineno):
+        lines = program.splitlines(keepends=True)
+        print(from_line, to_line)
+        return "".join(
+            [
+                *lines[:from_lineno],
+                *lines[from_end_lineno:to_lineno],
+                *lines[from_lineno:from_end_lineno],
+                *lines[to_lineno:],
+            ]
+        )
+    return None
+
+
+def try_move_random_stmt(program: str, tries: int = 3) -> str | None:
+    tried = set()
+    lines = program.splitlines()
+    while True:
+        try:
+            line = random.randint(1, len(lines))
+            if line in tried:
+                if len(tried) == len(lines):
+                    return None
+                continue
+            tried.add(line)
+            res = move_stmt_randomly(program, line)
+            if res is not None:
+                return res
+            tries -= 1
+            if tries == 0:
+                return None
+        except:  # noqa: E722
+            continue
+
+
+def move_random_stmt(program: str, tries: int = 3) -> str:
+    return try_move_random_stmt(program, tries) or program
