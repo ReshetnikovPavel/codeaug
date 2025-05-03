@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from datasets import load_dataset
-import itertools
+from datasets import load_dataset, concatenate_datasets
 
 
 def get_clone_detection_dataloaders(
@@ -12,14 +11,28 @@ def get_clone_detection_dataloaders(
     train_split = "train"
     val_split = "val"
 
-    def tokenize_function(examples):
+    def transform_tokenize_function(examples):
         return tokenizer(
-            list(itertools.chain(examples["code1"], map(t, examples["code1"]))),
-            list(itertools.chain(examples["code2"], map(t, examples["code2"]))),
+            [t(c) for c in examples["code1"]],
+            [t(c) for c in examples["code2"]],
             padding="max_length",
             truncation=True,
             max_length=512,
         )
+
+    def tokenize_function(examples):
+        return tokenizer(
+            examples["code1"],
+            examples["code2"],
+            padding="max_length",
+            truncation=True,
+            max_length=512,
+        )
+
+    def process_dataset_with_transform(dataset):
+        return dataset.map(
+            transform_tokenize_function, batched=True, remove_columns=["code1", "code2"]
+        ).with_format("torch")
 
     def process_dataset(dataset):
         return dataset.map(
@@ -27,9 +40,14 @@ def get_clone_detection_dataloaders(
         ).with_format("torch")
 
     print("Processing train dataset")
-    train_ds = process_dataset(ds[train_split]).take(10)
+    train_ds = concatenate_datasets(
+        [
+            process_dataset(ds[train_split]),
+            process_dataset_with_transform(ds[train_split]),
+        ]
+    )
     print("Processing val dataset")
-    val_ds = process_dataset(ds[val_split]).take(10)
+    val_ds = process_dataset(ds[val_split])
 
     def collate_fn(batch):
         return {
