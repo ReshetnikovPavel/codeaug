@@ -1,4 +1,5 @@
 import itertools
+import random
 import sys
 from typing import Callable, Generator
 
@@ -6,6 +7,12 @@ from tree_sitter import Node, Tree, Language, Parser
 import tree_sitter_python as tspython
 
 PY_LANGUAGE = Language(tspython.language())
+
+
+def randomly(probability: float) -> bool:
+    if not 0 <= probability <= 1:
+        raise ValueError("Probability must be between 0 and 1 inclusive")
+    return random.random() < probability
 
 
 def traverse_tree(tree: Tree) -> Generator[Node, None, None]:

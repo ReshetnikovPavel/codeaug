@@ -42,12 +42,12 @@ def get_clone_detection_dataloaders(
     print("Processing train dataset")
     train_ds = concatenate_datasets(
         [
-            process_dataset(ds[train_split]),
-            process_dataset_with_transform(ds[train_split]),
+            process_dataset(ds[train_split].take(100)),
+            process_dataset_with_transform(ds[train_split].take(100)),
         ]
     )
     print("Processing val dataset")
-    val_ds = process_dataset(ds[val_split])
+    val_ds = process_dataset(ds[val_split].take(1000))
 
     def collate_fn(batch):
         return {

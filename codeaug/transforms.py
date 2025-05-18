@@ -1,4 +1,7 @@
+from typing import Callable
+import tree_sitter
 import codeaug.functional as F
+import utils
 
 
 class Compose:
@@ -20,18 +23,95 @@ class Compose:
 
 
 class RemoveComments:
+    def __init__(
+        self, should_apply: Callable[[tree_sitter.Node], bool] = lambda _: True
+    ):
+        self.should_apply = should_apply
+
     def __call__(self, program: str):
-        return F.remove_comments(program)
+        return F.remove_comments(program, self.should_apply)
 
 
 class InvertIfs:
+    def __init__(
+        self, should_apply: Callable[[tree_sitter.Node], bool] = lambda _: True
+    ):
+        self.should_apply = should_apply
+
     def __call__(self, program: str):
-        return F.invert_ifs(program)
+        return F.invert_ifs(program, self.should_apply)
+
+
+class ReplaceForWithWhile:
+    def __init__(
+        self, should_apply: Callable[[tree_sitter.Node], bool] = lambda _: True
+    ):
+        self.should_apply = should_apply
+
+    def __call__(self, program: str):
+        return F.replace_for_with_while(program, self.should_apply)
+
+
+class SwitchConditionals:
+    def __init__(
+        self, should_apply: Callable[[tree_sitter.Node], bool] = lambda _: True
+    ):
+        self.should_apply = should_apply
+
+    def __call__(self, program: str):
+        return F.switch_conditionals(program, self.should_apply)
+
+
+class RenameVariables:
+    def __init__(
+        self,
+        rename_func: Callable[[str], str],
+        should_apply: Callable[[str], bool] = lambda _: True,
+    ):
+        self.rename_func = rename_func
+        self.should_apply = should_apply
+
+    def __call__(self, program: str):
+        return F.rename_variables(program, self.rename_func, self.should_apply)
+
+
+class RenameFunctions:
+    def __init__(
+        self,
+        rename_func: Callable[[str], str],
+        should_apply: Callable[[str], bool] = lambda _: True,
+    ):
+        self.rename_func = rename_func
+        self.should_apply = should_apply
+
+    def __call__(self, program: str):
+        return F.rename_functions(program, self.rename_func, self.should_apply)
+
+
+class RenameClasses:
+    def __init__(
+        self,
+        rename_func: Callable[[str], str],
+        should_apply: Callable[[str], bool] = lambda _: True,
+    ):
+        self.rename_func = rename_func
+        self.should_apply = should_apply
+
+    def __call__(self, program: str):
+        return F.rename_classes(program, self.rename_func, self.should_apply)
 
 
 class MoveRandomStmt:
     def __init__(self, tries: int = 3):
         self.tries = tries
 
-    def __call__(self, program: str, ):
+    def __call__(self, program: str):
         return F.move_random_stmt(program, self.tries)
+
+
+class Randomly:
+    def __init__(self, probability: int = 0.8):
+        self.probability = probability
+
+    def __call__(self, *args) -> bool:
+        return utils.randomly(self.probability)

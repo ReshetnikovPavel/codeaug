@@ -6,8 +6,6 @@ transform = codeaug.transforms.Compose([
     codeaug.transforms.MoveRandomStmt(),
     codeaug.transforms.MoveRandomStmt(),
     codeaug.transforms.MoveRandomStmt(),
-    codeaug.transforms.MoveRandomStmt(),
-    codeaug.transforms.MoveRandomStmt(),
 ])
 
 

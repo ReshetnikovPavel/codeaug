@@ -251,7 +251,6 @@ def move_stmt_randomly(program: str, from_line: int) -> str | None:
 
     if _in_ranges(get_insert_ranges(program, root, from_stmt), to_lineno):
         lines = program.splitlines(keepends=True)
-        print(from_line, to_line)
         return "".join(
             [
                 *lines[:from_lineno],
