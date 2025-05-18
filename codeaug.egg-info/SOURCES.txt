@@ -11,7 +11,9 @@ codeaug.egg-info/top_level.txt
 codeaug/functional/__init__.py
 codeaug/functional/invert_ifs.py
 codeaug/functional/remove_comments.py
+codeaug/functional/rename_variables.py
 codeaug/functional/replace_for_with_while.py
+codeaug/functional/switch_compare.py
 codeaug/functional/switch_lines.py
 tests/test_invert_ifs.py
 tests/test_remove_comments.py

@@ -31,20 +31,27 @@ def get_indentaion_by_node(program: bytes, node: Node) -> int:
 
 
 def generic_visit(
-    node: Node, program: bytes, visit: Callable[[Node, bytes], bytes]
+    node: Node,
+    program: bytes,
+    visit: Callable[[Node, bytes], bytes],
+    should_apply: Callable[[Node], bool],
 ) -> bytes:
     new_program = []
     prev = node.start_byte
     for child in node.children:
         new_program.append(program[prev : child.start_byte])
-        new_program.append(visit(child, program))
+        new_program.append(visit(child, program, should_apply))
         prev = child.end_byte
     new_program.append(program[prev : node.end_byte])
 
     return b"".join(new_program)
 
 
-def python_program_visitor(program: str, visit: Callable[[Node, bytes], bytes]) -> str:
+def python_program_visitor(
+    program: str,
+    visit: Callable[[Node, bytes, Callable[[Node], bool]], bytes],
+    should_apply: Callable[[Node], bool],
+) -> str:
     assert isinstance(program, str)
 
     parser = Parser(PY_LANGUAGE)
@@ -54,8 +61,8 @@ def python_program_visitor(program: str, visit: Callable[[Node, bytes], bytes]) 
     return b"".join(
         [
             program[: root.start_byte],
-            visit(tree.root_node, program),
-            program[root.end_byte:],
+            visit(tree.root_node, program, should_apply),
+            program[root.end_byte :],
         ]
     ).decode("utf-8")
 

@@ -1,8 +1,9 @@
+import os
+import tempfile
+from typing import Callable
+
 import libcst as cst
 from bowler import Query
-import tempfile
-import os
-from typing import Callable
 
 
 class VariableCollector(cst.CSTVisitor):
@@ -61,11 +62,15 @@ class VariableCollector(cst.CSTVisitor):
                 self._handle_target(element.value)
 
 
-def rename_variables(code: str, rename_func: Callable[[str], str]) -> str:
+def rename_variables(
+    code: str,
+    rename_func: Callable[[str], str],
+    should_apply: Callable[[str], bool] = lambda _: True,
+) -> str:
     module = cst.parse_module(code)
     collector = VariableCollector()
     module.visit(collector)
-    rename_map = {old: rename_func(old) for old in collector.vars}
+    rename_map = {old: rename_func(old) for old in collector.vars if should_apply(old)}
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
         tmp.write(code)
@@ -93,11 +98,17 @@ class FunctionCollector(cst.CSTVisitor):
         self.functions.add(node.name.value)
 
 
-def rename_functions(code: str, rename_func: Callable[[str], str]) -> str:
+def rename_functions(
+    code: str,
+    rename_func: Callable[[str], str],
+    should_apply: Callable[[str], bool] = lambda _: True,
+) -> str:
     module = cst.parse_module(code)
     collector = FunctionCollector()
     module.visit(collector)
-    rename_map = {old: rename_func(old) for old in collector.functions}
+    rename_map = {
+        old: rename_func(old) for old in collector.functions if should_apply(old)
+    }
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
         tmp.write(code)
@@ -126,11 +137,17 @@ class ClassCollector(cst.CSTVisitor):
         self.classes.add(node.name.value)
 
 
-def rename_classes(code: str, rename_func: Callable[[str], str]) -> str:
+def rename_classes(
+    code: str,
+    rename_func: Callable[[str], str],
+    should_apply: Callable[[str], bool] = lambda _: True,
+) -> str:
     module = cst.parse_module(code)
     collector = ClassCollector()
     module.visit(collector)
-    rename_map = {old: rename_func(old) for old in collector.classes}
+    rename_map = {
+        old: rename_func(old) for old in collector.classes if should_apply(old)
+    }
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
         tmp.write(code)

@@ -1,3 +1,5 @@
+from typing import Callable
+
 from tree_sitter import Node
 
 from codeaug.utils import generic_visit, get_indentaion_by_node, python_program_visitor
@@ -31,9 +33,9 @@ def __get_range_arguments(node: Node) -> (bytes, bytes, bytes):
     raise Exception("Range has too many arguments")
 
 
-def __visit(node: Node, program: bytes) -> bytes:
+def __visit(node: Node, program: bytes, should_apply: Callable[[Node], bool]) -> bytes:
     new_program = []
-    if __is_for_identifier_in_range(node):
+    if __is_for_identifier_in_range(node) and should_apply(node):
         left = node.child_by_field_name("left")
         right = node.child_by_field_name("right")
         body = node.child_by_field_name("body")
@@ -52,7 +54,7 @@ def __visit(node: Node, program: bytes) -> bytes:
                 b"while ",
                 condition,
                 program[right.end_byte : body.start_byte],
-                __visit(body, program),
+                __visit(body, program, should_apply),
                 b"\n",
                 inside_loop_indentation,
                 increment,
@@ -60,8 +62,10 @@ def __visit(node: Node, program: bytes) -> bytes:
         )
 
         return b"".join(new_program)
-    return generic_visit(node, program, __visit)
+    return generic_visit(node, program, __visit, should_apply)
 
 
-def replace_for_with_while(program: str) -> str:
-    return python_program_visitor(program, __visit)
+def replace_for_with_while(
+    program: str, should_apply: Callable[[Node], bool] = lambda _: True
+) -> str:
+    return python_program_visitor(program, __visit, should_apply)
