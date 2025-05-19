@@ -9,4 +9,4 @@ transform = codeaug.transforms.Compose([
 ])
 
 
-codebert_clone_detection.train_model(t=transform)
+codebert_clone_detection.train_model(__file__, t=transform)

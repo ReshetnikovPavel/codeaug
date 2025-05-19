@@ -29,7 +29,11 @@ class RemoveComments:
         self.should_apply = should_apply
 
     def __call__(self, program: str):
-        return F.remove_comments(program, self.should_apply)
+        try:
+            return F.remove_comments(program, self.should_apply)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class InvertIfs:
@@ -39,7 +43,11 @@ class InvertIfs:
         self.should_apply = should_apply
 
     def __call__(self, program: str):
-        return F.invert_ifs(program, self.should_apply)
+        try:
+            return F.invert_ifs(program, self.should_apply)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class ReplaceForWithWhile:
@@ -49,7 +57,11 @@ class ReplaceForWithWhile:
         self.should_apply = should_apply
 
     def __call__(self, program: str):
-        return F.replace_for_with_while(program, self.should_apply)
+        try:
+            return F.replace_for_with_while(program, self.should_apply)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class SwitchConditionals:
@@ -59,7 +71,11 @@ class SwitchConditionals:
         self.should_apply = should_apply
 
     def __call__(self, program: str):
-        return F.switch_conditionals(program, self.should_apply)
+        try:
+            return F.switch_conditionals(program, self.should_apply)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class RenameVariables:
@@ -72,7 +88,11 @@ class RenameVariables:
         self.should_apply = should_apply
 
     def __call__(self, program: str):
-        return F.rename_variables(program, self.rename_func, self.should_apply)
+        try:
+            return F.rename_variables(program, self.rename_func, self.should_apply)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class RenameFunctions:
@@ -85,7 +105,11 @@ class RenameFunctions:
         self.should_apply = should_apply
 
     def __call__(self, program: str):
-        return F.rename_functions(program, self.rename_func, self.should_apply)
+        try:
+            return F.rename_functions(program, self.rename_func, self.should_apply)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class RenameClasses:
@@ -98,7 +122,11 @@ class RenameClasses:
         self.should_apply = should_apply
 
     def __call__(self, program: str):
-        return F.rename_classes(program, self.rename_func, self.should_apply)
+        try:
+            return F.rename_classes(program, self.rename_func, self.should_apply)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class MoveRandomStmt:
@@ -106,7 +134,11 @@ class MoveRandomStmt:
         self.tries = tries
 
     def __call__(self, program: str):
-        return F.move_random_stmt(program, self.tries)
+        try:
+            return F.move_random_stmt(program, self.tries)
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
 
 
 class Randomly:
@@ -115,3 +147,11 @@ class Randomly:
 
     def __call__(self, *args) -> bool:
         return codeaug.utils.randomly(self.probability)
+
+
+class RenameTNumber:
+    def __init__(self):
+        self.n = 0
+
+    def __call__(self, _):
+        return f"t{self.n}"

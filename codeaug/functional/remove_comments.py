@@ -9,8 +9,9 @@ PY_LANGUAGE = Language(tspython.language())
 
 
 def remove_comments(
-    program: bytes, should_apply: Callable[[Node], bool] = lambda _: True
-) -> bytes:
+    program: str, should_apply: Callable[[Node], bool] = lambda _: True
+) -> str:
+    program = program.encode("utf-8")
     changed_program = []
     parser = Parser(PY_LANGUAGE)
     tree = parser.parse(program)
@@ -30,4 +31,5 @@ def remove_comments(
             prev = node.end_byte
 
     changed_program.append(program[prev:])
-    return b"".join(changed_program)
+    res = b"".join(changed_program)
+    return res.decode("utf-8")

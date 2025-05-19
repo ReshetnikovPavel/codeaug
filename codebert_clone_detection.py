@@ -27,7 +27,7 @@ class CodeBERTCloneDetector(nn.Module):
         return self.classifier(cls_embedding).squeeze(-1)
 
 
-def train_model(fold_num=0, t=lambda x: x):
+def train_model(name_prefix:str, fold_num=0, t=lambda x: x):
     tokenizer = RobertaTokenizer.from_pretrained(MODEL_NAME)
     model = CodeBERTCloneDetector().to(DEVICE)
     optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
@@ -95,7 +95,7 @@ def train_model(fold_num=0, t=lambda x: x):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-            torch.save(model.state_dict(), f"best_model_fold{fold_num}_{timestamp}.pt")
+            torch.save(model.state_dict(), f"{name_prefix}_best_model_fold{fold_num}_{timestamp}.pt")
 
         print(f"\nEpoch {epoch + 1}/{EPOCHS}")
         print(f"Train Loss: {train_loss:.4f} | Acc: {train_acc:.4f}")
