@@ -154,4 +154,5 @@ class RenameTNumber:
         self.n = 0
 
     def __call__(self, _):
+        self.n += 1
         return f"t{self.n}"
