@@ -1,7 +1,7 @@
 from typing import Callable
 import tree_sitter
 import codeaug.functional as F
-import utils
+import codeaug.utils
 
 
 class Compose:
@@ -114,4 +114,4 @@ class Randomly:
         self.probability = probability
 
     def __call__(self, *args) -> bool:
-        return utils.randomly(self.probability)
+        return codeaug.utils.randomly(self.probability)

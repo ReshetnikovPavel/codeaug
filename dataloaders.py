@@ -3,9 +3,7 @@ from torch.utils.data import DataLoader
 from datasets import load_dataset, concatenate_datasets
 
 
-def get_clone_detection_dataloaders(
-    tokenizer, fold_num=0, batch_size=16, t=lambda x: x
-):
+def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=None):
     print("loading PoolC/5-fold-clone-detection-600k-5fold")
     ds = load_dataset("PoolC/5-fold-clone-detection-600k-5fold")
     train_split = "train"
@@ -43,7 +41,9 @@ def get_clone_detection_dataloaders(
     train_ds = concatenate_datasets(
         [
             process_dataset(ds[train_split].take(100)),
-            process_dataset_with_transform(ds[train_split].take(100)),
+            process_dataset_with_transform(ds[train_split].take(100))
+            if t is not None
+            else [],
         ]
     )
     print("Processing val dataset")
