@@ -9,7 +9,7 @@ def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=None
     train_split = "train"
     val_split = "val"
 
-    def transform_tokenize_function(examples):
+    def transform_tokenize_function(examples, t):
         return tokenizer(
             [t(c) for c in examples["code1"]],
             [t(c) for c in examples["code2"]],
@@ -27,9 +27,11 @@ def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=None
             max_length=512,
         )
 
-    def process_dataset_with_transform(dataset):
+    def process_dataset_with_transform(dataset, t):
         return dataset.map(
-            transform_tokenize_function, batched=True, remove_columns=["code1", "code2"]
+            lambda x: transform_tokenize_function(x, t),
+            batched=True,
+            remove_columns=["code1", "code2"],
         ).with_format("torch")
 
     def process_dataset(dataset):
@@ -38,14 +40,19 @@ def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=None
         ).with_format("torch")
 
     print("Processing train dataset")
-    train_ds = concatenate_datasets(
-        [
-            process_dataset(ds[train_split].take(100)),
-            process_dataset_with_transform(ds[train_split].take(100))
-            if t is not None
-            else [],
-        ]
-    )
+    datasets = [
+        process_dataset(ds[train_split].take(1000)),
+    ]
+    if isinstance(t, list):
+        for t_i in t:
+            datasets.append(
+                process_dataset_with_transform(ds[train_split].take(1000), t_i)
+            )
+    elif t is not None:
+        datasets.append(process_dataset_with_transform(
+            ds[train_split].take(1000), t))
+
+    train_ds = concatenate_datasets(datasets)
     print("Processing val dataset")
     val_ds = process_dataset(ds[val_split].take(1000))
 
@@ -60,6 +67,7 @@ def get_clone_detection_dataloaders(tokenizer, fold_num=0, batch_size=16, t=None
         train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_fn
     )
 
-    val_loader = DataLoader(val_ds, batch_size=batch_size, collate_fn=collate_fn)
+    val_loader = DataLoader(
+        val_ds, batch_size=batch_size, collate_fn=collate_fn)
 
     return train_loader, val_loader

@@ -81,7 +81,7 @@ class SwitchConditionals:
 class RenameVariables:
     def __init__(
         self,
-        rename_func: Callable[[str], str],
+        rename_func: Callable[[str, str], str],
         should_apply: Callable[[str], bool] = lambda _: True,
     ):
         self.rename_func = rename_func
@@ -98,7 +98,7 @@ class RenameVariables:
 class RenameFunctions:
     def __init__(
         self,
-        rename_func: Callable[[str], str],
+        rename_func: Callable[[str, str], str],
         should_apply: Callable[[str], bool] = lambda _: True,
     ):
         self.rename_func = rename_func
@@ -115,7 +115,7 @@ class RenameFunctions:
 class RenameClasses:
     def __init__(
         self,
-        rename_func: Callable[[str], str],
+        rename_func: Callable[[str, str], str],
         should_apply: Callable[[str], bool] = lambda _: True,
     ):
         self.rename_func = rename_func
@@ -139,20 +139,3 @@ class MoveRandomStmt:
         except Exception as e:
             codeaug.utils.eprint(e)
             return program
-
-
-class Randomly:
-    def __init__(self, probability: int = 0.8):
-        self.probability = probability
-
-    def __call__(self, *args) -> bool:
-        return codeaug.utils.randomly(self.probability)
-
-
-class RenameTNumber:
-    def __init__(self):
-        self.n = 0
-
-    def __call__(self, _):
-        self.n += 1
-        return f"t{self.n}"

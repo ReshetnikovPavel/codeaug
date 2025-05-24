@@ -1,6 +1,8 @@
 README.md
 pyproject.toml
 codeaug/__init__.py
+codeaug/apply_stategies.py
+codeaug/rename_strategies.py
 codeaug/transforms.py
 codeaug/utils.py
 codeaug.egg-info/PKG-INFO
@@ -10,10 +12,10 @@ codeaug.egg-info/requires.txt
 codeaug.egg-info/top_level.txt
 codeaug/functional/__init__.py
 codeaug/functional/invert_ifs.py
+codeaug/functional/move_statements.py
 codeaug/functional/remove_comments.py
-codeaug/functional/rename_variables.py
+codeaug/functional/rename.py
 codeaug/functional/replace_for_with_while.py
 codeaug/functional/switch_compare.py
-codeaug/functional/switch_lines.py
 tests/test_invert_ifs.py
 tests/test_remove_comments.py

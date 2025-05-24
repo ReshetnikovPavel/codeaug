@@ -75,6 +75,19 @@ wheels = [
 ]
 
 [[package]]
+name = "beautifulsoup4"
+version = "4.13.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "soupsieve" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/e4/0c4c39e18fd76d6a628d4dd8da40543d136ce2d1752bd6eeeab0791f4d6b/beautifulsoup4-4.13.4.tar.gz", hash = "sha256:dbb3c4e1ceae6aefebdaf2423247260cd062430a410e38c66f2baa50a8437195", size = 621067, upload-time = "2025-04-15T17:05:13.836Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/cd/30110dc0ffcf3b131156077b90e9f60ed75711223f306da4db08eff8403b/beautifulsoup4-4.13.4-py3-none-any.whl", hash = "sha256:9bbbb14bfde9d79f38b8cd5f8c7c85f4b8f2523190ebed90e950a8dea4cb1c4b", size = 187285, upload-time = "2025-04-15T17:05:12.221Z" },
+]
+
+[[package]]
 name = "beniget"
 version = "0.4.2.post1"
 source = { registry = "https://pypi.org/simple" }
@@ -100,6 +113,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f4/02/4728875b1fc4382ea71e771c3475a2af6ccaf140663b36c8456ebba4ac5a/bowler-0.9.0.tar.gz", hash = "sha256:cdb85ce2e7bd545802a15d755d1daf2b6a125429355c50d2019a9f35d63e45db", size = 42594, upload-time = "2020-09-17T01:55:40.877Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b4/dc/17d999c602eb0ce1d1cd8d0833d29ca8cc1472ba3585c6e891450c2a621f/bowler-0.9.0-py3-none-any.whl", hash = "sha256:0351839e9917765be694aa52c99ea784dc1286c9bdd6fd066b810097fc273e1b", size = 36281, upload-time = "2020-09-17T01:55:39.186Z" },
+]
+
+[[package]]
+name = "bs4"
+version = "0.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "beautifulsoup4" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c9/aa/4acaf814ff901145da37332e05bb510452ebed97bc9602695059dd46ef39/bs4-0.0.2.tar.gz", hash = "sha256:a48685c58f50fe127722417bae83fe6badf500d54b55f7e39ffe43b798653925", size = 698, upload-time = "2024-01-17T18:15:47.371Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/bb/bf7aab772a159614954d84aa832c129624ba6c32faa559dfb200a534e50b/bs4-0.0.2-py2.py3-none-any.whl", hash = "sha256:abf8742c0805ef7f662dce4b51cca104cffe52b835238afc169142ab9b3fbccc", size = 1189, upload-time = "2024-01-17T18:15:48.613Z" },
 ]
 
 [[package]]
@@ -154,6 +179,7 @@ dependencies = [
     { name = "bowler" },
     { name = "datasets" },
     { name = "libcst" },
+    { name = "pymultidictionary" },
     { name = "pytest" },
     { name = "torch" },
     { name = "transformers" },
@@ -172,6 +198,7 @@ requires-dist = [
     { name = "bowler", specifier = ">=0.9.0" },
     { name = "datasets", specifier = ">=3.2.0" },
     { name = "libcst", specifier = ">=1.7.0" },
+    { name = "pymultidictionary", specifier = ">=1.3.2" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "torch", specifier = ">=2.6.0" },
@@ -326,6 +353,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d7/4b/cbd8e699e64a6f16ca3a8220661b5f83792b3017d0f79807cb8708d33913/iniconfig-2.0.0.tar.gz", hash = "sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3", size = 4646, upload-time = "2023-01-07T11:08:11.254Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ef/a6/62565a6e1cf69e10f5727360368e451d4b7f58beeac6173dc9db836a5b46/iniconfig-2.0.0-py3-none-any.whl", hash = "sha256:b6a85871a79d2e3b22d2d1b94ac2824226a63c6b741c88f7ae975f18b6778374", size = 5892, upload-time = "2023-01-07T11:08:09.864Z" },
+]
+
+[[package]]
+name = "iso639-lang"
+version = "2.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/92/0d76a4df7af8b0b9d2d567c473815d574a7ad0a6a1163245f77bc42e547d/iso639_lang-2.6.0.tar.gz", hash = "sha256:ab491ec83d35bc094a00702547249db56ea2eaf780af0c890bad06c9ff3da352", size = 319383, upload-time = "2025-02-18T07:37:59.795Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/06/46/b00e5bed0699c3ccbec03c01f871d154bdf7af617bf3d303a29c003c4d31/iso639_lang-2.6.0-py3-none-any.whl", hash = "sha256:e49908d63ae67903503cb0cc35b78af16eb3c91ba8b55167f7003574b6349edc", size = 324798, upload-time = "2025-02-18T07:37:57.774Z" },
 ]
 
 [[package]]
@@ -694,6 +730,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pymultidictionary"
+version = "1.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "bs4" },
+    { name = "iso639-lang" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/19/c6/05cc61b7609bbcb9059883a0be9bdbfbf89f0770c7440b9db3fed7afc4dc/pymultidictionary-1.3.2.tar.gz", hash = "sha256:dc09b2df1cdc05e32d5c349e60621e234fefa9b37d89f43148f0d5784e924df6", size = 24946, upload-time = "2025-03-27T22:30:46.271Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/34/7d/9293237643c186786945740c8bf816461e852477ce708894cac6f7664f13/pymultidictionary-1.3.2-py3-none-any.whl", hash = "sha256:7a2a2d7c49000de729e1a0228ed179db4ced9a3332a3060615b6b726a63d54ab", size = 23290, upload-time = "2025-03-27T22:30:44.632Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "8.3.4"
 source = { registry = "https://pypi.org/simple" }
@@ -822,6 +872,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
+]
+
+[[package]]
+name = "soupsieve"
+version = "2.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/f4/4a80cd6ef364b2e8b65b15816a843c0980f7a5a2b4dc701fc574952aa19f/soupsieve-2.7.tar.gz", hash = "sha256:ad282f9b6926286d2ead4750552c8a6142bc4c783fd66b0293547c8fe6ae126a", size = 103418, upload-time = "2025-04-20T18:50:08.518Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/9c/0e6afc12c269578be5c0c1c9f4b49a8d32770a080260c333ac04cc1c832d/soupsieve-2.7-py3-none-any.whl", hash = "sha256:6e60cc5c1ffaf1cebcc12e8188320b72071e922c2e897f737cadce79ad5d30c4", size = 36677, upload-time = "2025-04-20T18:50:07.196Z" },
 ]
 
 [[package]]

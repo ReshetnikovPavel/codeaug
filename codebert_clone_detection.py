@@ -7,7 +7,7 @@ from dataloaders import get_clone_detection_dataloaders
 
 
 MODEL_NAME = "microsoft/codebert-base"
-BATCH_SIZE = 16
+BATCH_SIZE = 1024
 LEARNING_RATE = 2e-5
 EPOCHS = 5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

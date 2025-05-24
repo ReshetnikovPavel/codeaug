@@ -64,13 +64,13 @@ class VariableCollector(cst.CSTVisitor):
 
 def rename_variables(
     code: str,
-    rename_func: Callable[[str], str],
+    rename_func: Callable[[str, str], str],
     should_apply: Callable[[str], bool] = lambda _: True,
 ) -> str:
     module = cst.parse_module(code)
     collector = VariableCollector()
     module.visit(collector)
-    rename_map = {old: rename_func(old) for old in collector.vars if should_apply(old)}
+    rename_map = {old: rename_func(old, code) for old in collector.vars if should_apply(old)}
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
         tmp.write(code)
@@ -100,14 +100,14 @@ class FunctionCollector(cst.CSTVisitor):
 
 def rename_functions(
     code: str,
-    rename_func: Callable[[str], str],
+    rename_func: Callable[[str, str], str],
     should_apply: Callable[[str], bool] = lambda _: True,
 ) -> str:
     module = cst.parse_module(code)
     collector = FunctionCollector()
     module.visit(collector)
     rename_map = {
-        old: rename_func(old) for old in collector.functions if should_apply(old)
+        old: rename_func(old, code) for old in collector.functions if should_apply(old)
     }
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
@@ -139,14 +139,14 @@ class ClassCollector(cst.CSTVisitor):
 
 def rename_classes(
     code: str,
-    rename_func: Callable[[str], str],
+    rename_func: Callable[[str, str], str],
     should_apply: Callable[[str], bool] = lambda _: True,
 ) -> str:
     module = cst.parse_module(code)
     collector = ClassCollector()
     module.visit(collector)
     rename_map = {
-        old: rename_func(old) for old in collector.classes if should_apply(old)
+        old: rename_func(old, code) for old in collector.classes if should_apply(old)
     }
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
