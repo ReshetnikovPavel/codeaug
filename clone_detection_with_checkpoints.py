@@ -1,32 +1,20 @@
 import torch
 import os
 from torch.utils.data import DataLoader
-from datasets import load_dataset, concatenate_datasets, Dataset, load_from_disk
-from codeaug.transforms import (
-    Compose,
-    MoveRandomStmt,
-    RenameClasses,
-    RenameTNumber,
-    Randomly,
-    RenameFunctions,
-    RenameVariables,
-    RemoveComments,
-    InvertIfs,
-    ReplaceForWithWhile,
-    SwitchConditionals,
-)
+from datasets import load_dataset, concatenate_datasets, load_from_disk
+
 
 def get_clone_detection_dataloaders(
     tokenizer,
     fold_num=0,
-    batch_size=16,
+    batch_size=1024,
     transforms=None,
     base_checkpoint_dir="./clone_detection_checkpoints",
-    chunk_size=500
+    chunk_size=500,
 ):
     """
     Creates dataloaders with checkpointing support for code clone detection.
-    
+
     Args:
         tokenizer: The tokenizer to use for processing
         fold_num: Which fold to use (0-4)
@@ -69,7 +57,7 @@ def get_clone_detection_dataloaders(
         num_chunks = (total_examples + chunk_size - 1) // chunk_size
 
         processed_chunks = []
-        
+
         # Check existing chunks
         last_completed = -1
         for i in range(num_chunks):
@@ -87,19 +75,19 @@ def get_clone_detection_dataloaders(
 
         # Process new chunks
         for i in range(last_completed + 1, num_chunks):
-            print(f"{desc} chunk {i+1}/{num_chunks}")
+            print(f"{desc} chunk {i + 1}/{num_chunks}")
             start_idx = i * chunk_size
             end_idx = min((i + 1) * chunk_size, total_examples)
-            
+
             # Select and process chunk
             chunk = dataset.select(range(start_idx, end_idx))
             processed = chunk.map(
                 process_fn,
                 batched=True,
                 batch_size=32,
-                remove_columns=["code1", "code2"]
+                remove_columns=["code1", "code2"],
             )
-            
+
             # Save checkpoint
             chunk_path = os.path.join(checkpoint_dir, f"chunk_{i}")
             processed.save_to_disk(chunk_path)
@@ -111,44 +99,38 @@ def get_clone_detection_dataloaders(
     fold_dir = os.path.join(base_checkpoint_dir, f"fold_{fold_num}")
     train_base_dir = os.path.join(fold_dir, "train")
     val_dir = os.path.join(fold_dir, "val")
-    
+
     # Process validation dataset first (no transforms)
     print("Processing validation dataset...")
     val_ds = process_with_checkpoint(
-        ds[val_split],
-        lambda x: tokenize_batch(x),
-        val_dir,
-        desc="Validating"
+        ds[val_split], lambda x: tokenize_batch(x), val_dir, desc="Validating"
     )
 
     # Process training datasets
     train_datasets = []
-    
+
     # 1. Base training dataset (no transforms)
     print("\nProcessing base training dataset...")
     base_train_ds = process_with_checkpoint(
         ds[train_split],
         lambda x: tokenize_batch(x),
         os.path.join(train_base_dir, "base"),
-        desc="Base training"
+        desc="Base training",
     )
     train_datasets.append(base_train_ds)
 
     # 2. Transformed datasets
     if transforms is not None:
         for idx, transform in enumerate(transforms):
-            print(f"\nProcessing transformation {idx+1}/{len(transforms)}")
-            
+            print(f"\nProcessing transformation {idx + 1}/{len(transforms)}")
+
             def transform_fn(examples):
                 transformed = apply_transform(examples, transform)
                 return tokenize_batch(transformed)
-            
+
             transform_dir = os.path.join(train_base_dir, f"transform_{idx}")
             transformed_ds = process_with_checkpoint(
-                ds[train_split],
-                transform_fn,
-                transform_dir,
-                desc=f"Transform {idx}"
+                ds[train_split], transform_fn, transform_dir, desc=f"Transform {idx}"
             )
             train_datasets.append(transformed_ds)
 
@@ -168,49 +150,11 @@ def get_clone_detection_dataloaders(
         batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_fn,
-        pin_memory=True
+        pin_memory=True,
     )
 
     val_loader = DataLoader(
-        val_ds,
-        batch_size=batch_size,
-        collate_fn=collate_fn,
-        pin_memory=True
+        val_ds, batch_size=batch_size, collate_fn=collate_fn, pin_memory=True
     )
 
     return train_loader, val_loader
-
-# Example usage with your transformations
-if __name__ == "__main__":
-    # Initialize your tokenizer (replace with actual tokenizer)
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-    
-    # Define your transformations
-    transforms = [
-        Compose([
-            MoveRandomStmt(),
-            MoveRandomStmt(),
-            MoveRandomStmt(),
-        ]),
-        Compose([
-            RenameClasses(RenameTNumber(), Randomly(0.6)),
-            RenameFunctions(RenameTNumber(), Randomly(0.6)),
-            RenameVariables(RenameTNumber(), Randomly(0.6)),
-        ]),
-        Compose([
-            RemoveComments(Randomly()),
-            InvertIfs(Randomly()),
-            ReplaceForWithWhile(Randomly()),
-            SwitchConditionals(Randomly()),
-        ])
-    ]
-
-    # Get dataloaders with checkpointing
-    train_loader, val_loader = get_clone_detection_dataloaders(
-        tokenizer=tokenizer,
-        fold_num=0,
-        transforms=transforms,
-        batch_size=1024,
-        base_checkpoint_dir="./clone_checkpoints",
-        chunk_size=500
-    )
