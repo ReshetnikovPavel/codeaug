@@ -15,8 +15,8 @@ accelerator = Accelerator()
 # Configuration
 model_name = "microsoft/codebert-base"
 num_epochs = 3
-checkpoint_dir = "checkpoints_aug"
-model_dir = "models_aug"
+checkpoint_dir = "checkpoints"
+model_dir = "models"
 
 # Create directories
 os.makedirs(checkpoint_dir, exist_ok=True)
@@ -24,7 +24,7 @@ os.makedirs(model_dir, exist_ok=True)
 
 # Tokenizer and DataLoaders
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-train_loader, val_loader = get_clone_detection_dataloaders(tokenizer, transforms=[lambda x: x])
+train_loader, val_loader = get_clone_detection_dataloaders(tokenizer)
 
 # Model
 model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
