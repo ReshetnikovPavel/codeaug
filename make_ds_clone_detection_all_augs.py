@@ -51,4 +51,4 @@ transforms = [
 
 
 tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-clone_detection_with_checkpoints.get_clone_detection_dataloaders(tokenizer)
+clone_detection_with_checkpoints.get_clone_detection_dataloaders(tokenizer, transforms=transforms)

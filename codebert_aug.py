@@ -7,7 +7,7 @@ from transformers import (
 )
 from accelerate import Accelerator
 import torch
-from clone_detection_with_checkpoints import get_clone_detection_dataloaders
+# from clone_detection_with_checkpoints import get_clone_detection_dataloaders
 
 # Initialize Accelerator
 accelerator = Accelerator()
