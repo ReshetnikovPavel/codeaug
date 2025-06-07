@@ -18,6 +18,9 @@ from codeaug.transforms import (
     RenameVariables,
     ReplaceForWithWhile,
     SwitchConditionals,
+    OneFrom,
+    FormatWithAutoPEP8,
+    FormatWithBlack,
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,6 +32,13 @@ tnumber = TNumber()
 transforms = [
     Compose(
         [
+            OneFrom(
+                [
+                    FormatWithBlack(),
+                    FormatWithAutoPEP8(aggressive=True),
+                    FormatWithAutoPEP8(aggressive=False),
+                ]
+            ),
             RemoveComments(Randomly()),
             InvertIfs(Randomly()),
             ReplaceForWithWhile(Randomly()),
@@ -49,6 +59,9 @@ transforms = [
     ),
 ]
 
+from_chunk, to_chunk = [int(x) for x in input().split()]
 
 tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-clone_detection_with_checkpoints.get_clone_detection_dataloaders(tokenizer, transforms=transforms)
+clone_detection_with_checkpoints.get_clone_detection_dataloaders(
+    tokenizer, from_chunk, to_chunk, transforms=transforms
+)

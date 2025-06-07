@@ -6,6 +6,8 @@ from datasets import load_dataset, concatenate_datasets, load_from_disk
 
 def get_clone_detection_dataloaders(
     tokenizer,
+    from_chunk: int,
+    to_chunk: int,
     fold_num=0,
     batch_size=1024,
     transforms=None,
@@ -59,8 +61,8 @@ def get_clone_detection_dataloaders(
         processed_chunks = []
 
         # Check existing chunks
-        last_completed = -1
-        for i in range(num_chunks):
+        last_completed = from_chunk
+        for i in range(last_completed, to_chunk):
             chunk_path = os.path.join(checkpoint_dir, f"chunk_{i}")
             if os.path.exists(chunk_path):
                 last_completed = i
@@ -68,14 +70,14 @@ def get_clone_detection_dataloaders(
                 break
 
         # Load completed chunks
-        for i in range(last_completed + 1):
-            chunk_path = os.path.join(checkpoint_dir, f"chunk_{i}")
-            processed_chunks.append(load_from_disk(chunk_path))
-            print(f"Loaded existing {desc} chunk {i}")
+        # for i in range(last_completed + 1):
+        #     chunk_path = os.path.join(checkpoint_dir, f"chunk_{i}")
+        #     processed_chunks.append(load_from_disk(chunk_path))
+        #     print(f"Loaded existing {desc} chunk {i}")
 
         # Process new chunks
-        for i in range(last_completed + 1, num_chunks):
-            print(f"{desc} chunk {i + 1}/{num_chunks}")
+        for i in range(last_completed + 1, to_chunk):
+            print(f"{desc} chunk {i + 1}/{to_chunk}")
             start_idx = i * chunk_size
             end_idx = min((i + 1) * chunk_size, total_examples)
 
@@ -101,23 +103,23 @@ def get_clone_detection_dataloaders(
     val_dir = os.path.join(fold_dir, "val")
 
     # Process validation dataset first (no transforms)
-    print("Processing validation dataset...")
-    val_ds = process_with_checkpoint(
-        ds[val_split], lambda x: tokenize_batch(x), val_dir, desc="Validating"
-    )
+    # print("Processing validation dataset...")
+    # val_ds = process_with_checkpoint(
+    #     ds[val_split], lambda x: tokenize_batch(x), val_dir, desc="Validating"
+    # )
 
     # Process training datasets
     train_datasets = []
 
     # 1. Base training dataset (no transforms)
-    print("\nProcessing base training dataset...")
-    base_train_ds = process_with_checkpoint(
-        ds[train_split],
-        lambda x: tokenize_batch(x),
-        os.path.join(train_base_dir, "base"),
-        desc="Base training",
-    )
-    train_datasets.append(base_train_ds)
+    # print("\nProcessing base training dataset...")
+    # base_train_ds = process_with_checkpoint(
+    #     ds[train_split],
+    #     lambda x: tokenize_batch(x),
+    #     os.path.join(train_base_dir, "base"),
+    #     desc="Base training",
+    # )
+    # train_datasets.append(base_train_ds)
 
     # 2. Transformed datasets
     if transforms is not None:

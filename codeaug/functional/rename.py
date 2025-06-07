@@ -2,17 +2,17 @@ import os
 import tempfile
 from typing import Callable
 
-import libcst as cst
+import ast
 from bowler import Query
 
 
-class VariableCollector(cst.CSTVisitor):
+class VariableCollector(ast.NodeVisitor):
     def __init__(self):
         self.vars = set()
 
     def visit_Assign(self, node):
         for target in node.targets:
-            self._handle_target(target.target)
+            self._handle_target(target)
 
     def visit_AnnAssign(self, node):
         self._handle_target(node.target)
@@ -21,11 +21,11 @@ class VariableCollector(cst.CSTVisitor):
         self._handle_target(node.target)
 
     def visit_FunctionDef(self, node):
-        params = node.params
+        params = node.args
         self._collect_params(params)
 
     def visit_Lambda(self, node):
-        self._collect_params(node.params)
+        self._collect_params(node.args)
 
     def visit_For(self, node):
         self._handle_target(node.target)
@@ -37,29 +37,25 @@ class VariableCollector(cst.CSTVisitor):
 
     def visit_ExceptHandler(self, node):
         if node.name is not None:
-            self.vars.add(node.name.value)
+            self.vars.add(node.name)
 
     def visit_NamedExpr(self, node):
         self._handle_target(node.target)
 
     def _collect_params(self, params):
-        for param in params.params:
-            self.vars.add(param.name.value)
-        for param in params.posonly_params:
-            self.vars.add(param.name.value)
-        for param in params.kwonly_params:
-            self.vars.add(param.name.value)
-        if params.star_arg:
-            self.vars.add(params.star_arg.name)
-        if params.star_kwarg:
-            self.vars.add(params.star_kwarg.name)
+        for param in params.args:
+            self.vars.add(param.arg)
+        for param in params.posonlyargs:
+            self.vars.add(param.arg)
+        for param in params.kwonlyargs:
+            self.vars.add(param.arg)
 
     def _handle_target(self, target):
-        if isinstance(target, cst.Name):
-            self.vars.add(target.value)
-        elif isinstance(target, (cst.Tuple, cst.List)):
-            for element in target.elements:
-                self._handle_target(element.value)
+        if isinstance(target, ast.Name):
+            self.vars.add(target.id)
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            for element in target.elts:
+                self._handle_target(element)
 
 
 def rename_variables(
@@ -67,9 +63,9 @@ def rename_variables(
     rename_func: Callable[[str, str], str],
     should_apply: Callable[[str], bool] = lambda _: True,
 ) -> str:
-    module = cst.parse_module(code)
+    module = ast.parse(code)
     collector = VariableCollector()
-    module.visit(collector)
+    collector.visit(module)
     rename_map = {old: rename_func(old, code) for old in collector.vars if should_apply(old)}
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
@@ -90,12 +86,12 @@ def rename_variables(
     return result
 
 
-class FunctionCollector(cst.CSTVisitor):
+class FunctionCollector(ast.NodeVisitor):
     def __init__(self):
         self.functions = set()
 
-    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
-        self.functions.add(node.name.value)
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self.functions.add(node.name)
 
 
 def rename_functions(
@@ -103,9 +99,9 @@ def rename_functions(
     rename_func: Callable[[str, str], str],
     should_apply: Callable[[str], bool] = lambda _: True,
 ) -> str:
-    module = cst.parse_module(code)
+    module = ast.parse(code)
     collector = FunctionCollector()
-    module.visit(collector)
+    collector.visit(module)
     rename_map = {
         old: rename_func(old, code) for old in collector.functions if should_apply(old)
     }
@@ -129,12 +125,12 @@ def rename_functions(
     return modified_code
 
 
-class ClassCollector(cst.CSTVisitor):
+class ClassCollector(ast.NodeVisitor):
     def __init__(self):
         self.classes = set()
 
-    def visit_ClassDef(self, node: cst.ClassDef) -> None:
-        self.classes.add(node.name.value)
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self.classes.add(node.name)
 
 
 def rename_classes(
@@ -142,9 +138,9 @@ def rename_classes(
     rename_func: Callable[[str, str], str],
     should_apply: Callable[[str], bool] = lambda _: True,
 ) -> str:
-    module = cst.parse_module(code)
+    module = ast.parse(code)
     collector = ClassCollector()
-    module.visit(collector)
+    collector.visit(module)
     rename_map = {
         old: rename_func(old, code) for old in collector.classes if should_apply(old)
     }

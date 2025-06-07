@@ -4,3 +4,4 @@ from .remove_comments import *
 from .move_statements import *
 from .switch_compare import *
 from .rename import *
+from .format import *

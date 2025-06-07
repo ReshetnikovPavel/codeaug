@@ -1,5 +1,8 @@
+import random
 from typing import Callable
+
 import tree_sitter
+
 import codeaug.functional as F
 import codeaug.utils
 
@@ -9,8 +12,10 @@ class Compose:
         self.transforms = transforms
 
     def __call__(self, program):
+        print(f"PROGRAM_START:::{program}:::PROGRAM_END")
         for t in self.transforms:
             program = t(program)
+        print(f"TRANSFORMED_PROGRAM_START:::{program}:::TRANSFORMED_PROGRAM_END")
         return program
 
     def __repr__(self) -> str:
@@ -130,7 +135,7 @@ class RenameClasses:
 
 
 class MoveRandomStmt:
-    def __init__(self, tries: int = 3):
+    def __init__(self, tries: int = 1):
         self.tries = tries
 
     def __call__(self, program: str):
@@ -139,3 +144,44 @@ class MoveRandomStmt:
         except Exception as e:
             codeaug.utils.eprint(e)
             return program
+
+
+class FormatWithAutoPEP8:
+    def __init__(
+        self,
+        aggressive: bool = False,
+        should_apply: Callable[[str], bool] = lambda _: True,
+    ):
+        self.aggressive = 1 if aggressive else 0
+        self.should_apply = should_apply
+
+    def __call__(self, program: str):
+        try:
+            if self.should_apply(program):
+                return F.format_with_autopep8(program, self.aggressive)
+            return program
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
+
+
+class FormatWithBlack:
+    def __init__(self, should_apply: Callable[[str], bool] = lambda _: True):
+        self.should_apply = should_apply
+
+    def __call__(self, program: str):
+        try:
+            if self.should_apply(program):
+                return F.format_with_black(program)
+            return program
+        except Exception as e:
+            codeaug.utils.eprint(e)
+            return program
+
+
+class OneFrom:
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, program: str):
+        return random.choices(self.transforms, k=1)[0](program)

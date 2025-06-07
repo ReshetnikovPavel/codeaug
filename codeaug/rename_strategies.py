@@ -58,7 +58,9 @@ class EnglishSynonyms:
             else:
                 parts.append(new_word)
 
-        return "".join(parts)
+        res = "".join(parts)
+        print("RENAME_SYNONYMS::: ", old_name, res)
+        return res
 
 
 name_pattern = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
@@ -106,4 +108,6 @@ class TransformerMaskReplacement:
 
         print(token_scores)
         tokens, weights = zip(*token_scores.items())
-        return random.choices(tokens, weights=weights, k=1)[0]
+        res = random.choices(tokens, weights=weights, k=1)[0]
+        print("RENAME_TRANSFORMER::: ", old_name, res)
+        return res

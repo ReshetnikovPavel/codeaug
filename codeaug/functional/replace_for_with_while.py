@@ -46,11 +46,13 @@ def __visit(node: Node, program: bytes, should_apply: Callable[[Node], bool]) ->
         condition = b"".join([left.text, b" < ", stop])
 
         inside_loop_indentation = get_indentaion_by_node(program, body)
+        before_while_indent = get_indentaion_by_node(program, node)
 
         new_program.extend(
             [
                 assign,
                 b"\n",
+                before_while_indent,
                 b"while ",
                 condition,
                 program[right.end_byte : body.start_byte],

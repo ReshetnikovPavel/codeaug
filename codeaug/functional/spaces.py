@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import Any, Callable
 
 
-def remove_meaningless_spaces(input_str: str, should_apply: Callable[[Any], bool] = lambda _: True) -> str:
+def remove_meaningless_spaces(input_str: str, should_apply: Callable[[Any], bool]) -> str:
     try:
         input_bytes = input_str.encode("utf-8")
     except UnicodeEncodeError:
