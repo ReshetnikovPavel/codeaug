@@ -90,9 +90,9 @@ print("Starting training...")
 trainer.train()
 
 # 12. Save final model
-trainer.save_model("./codebert_clone_detection/final_model")
-tokenizer.save_pretrained("./codebert_clone_detection/final_model")
-print("Training complete. Model saved to ./codebert_clone_detection/final_model")
+trainer.save_model("./codebert_clone_detection_base/final_model")
+tokenizer.save_pretrained("./codebert_clone_detection_base/final_model")
+print("Training complete. Model saved to ./codebert_clone_detection_base/final_model")
 
 # 13. Evaluate on validation set
 results = trainer.evaluate()
