@@ -183,5 +183,5 @@ class OneFrom:
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, program: str):
-        return random.choices(self.transforms, k=1)[0](program)
+    def __call__(self, *args, **kwargs):
+        return random.choices(self.transforms, k=1)[0](*args, **kwargs)

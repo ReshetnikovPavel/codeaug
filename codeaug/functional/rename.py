@@ -66,7 +66,15 @@ def rename_variables(
     module = ast.parse(code)
     collector = VariableCollector()
     collector.visit(module)
-    rename_map = {old: rename_func(old, code) for old in collector.vars if should_apply(old)}
+
+    rename_map = dict()
+    for old in collector.vars:
+        if not should_apply(old):
+            continue
+        new = rename_func(old, code)
+        if old == new:
+            continue
+        rename_map[old] = new
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
         tmp.write(code)
@@ -86,12 +94,18 @@ def rename_variables(
     return result
 
 
+def is_dunder(name: str) -> bool:
+    return name.startswith("__") and name.endswith("__")
+
+
 class FunctionCollector(ast.NodeVisitor):
     def __init__(self):
         self.functions = set()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        self.functions.add(node.name)
+        if not is_dunder(node.name):
+            self.functions.add(node.name)
+        self.generic_visit(node)
 
 
 def rename_functions(
@@ -102,9 +116,15 @@ def rename_functions(
     module = ast.parse(code)
     collector = FunctionCollector()
     collector.visit(module)
-    rename_map = {
-        old: rename_func(old, code) for old in collector.functions if should_apply(old)
-    }
+
+    rename_map = dict()
+    for old in collector.functions:
+        if not should_apply(old):
+            continue
+        new = rename_func(old, code)
+        if old == new:
+            continue
+        rename_map[old] = new
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
         tmp.write(code)
@@ -131,6 +151,7 @@ class ClassCollector(ast.NodeVisitor):
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.classes.add(node.name)
+        self.generic_visit(node)
 
 
 def rename_classes(
@@ -141,9 +162,15 @@ def rename_classes(
     module = ast.parse(code)
     collector = ClassCollector()
     collector.visit(module)
-    rename_map = {
-        old: rename_func(old, code) for old in collector.classes if should_apply(old)
-    }
+
+    rename_map = dict()
+    for old in collector.classes:
+        if not should_apply(old):
+            continue
+        new = rename_func(old, code)
+        if old == new:
+            continue
+        rename_map[old] = new
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".py", delete=False) as tmp:
         tmp.write(code)

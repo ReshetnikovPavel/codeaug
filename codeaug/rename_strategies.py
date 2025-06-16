@@ -45,6 +45,7 @@ class EnglishSynonyms:
         new_words = []
         for word in words:
             synonyms = self.dictionary.synonym("en", word)
+            print(synonyms)
             synonyms.append(word)
             random_synonym = random.choice(synonyms)
             if word[0].isupper():
@@ -109,5 +110,7 @@ class TransformerMaskReplacement:
         print(token_scores)
         tokens, weights = zip(*token_scores.items())
         res = random.choices(tokens, weights=weights, k=1)[0]
+        if old_name[0].isupper():
+            res = res[0].upper() + res[1:]
         print("RENAME_TRANSFORMER::: ", old_name, res)
         return res
