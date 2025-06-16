@@ -1,3 +1,0 @@
-import codebert_clone_detection
-
-codebert_clone_detection.train_model(__file__)
